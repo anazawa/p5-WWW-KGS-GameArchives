@@ -5,10 +5,10 @@ all_from 'lib/Net/KGS/GameArchives.pm';
 repository 'https://github.com/anazawa/p5-Net-KGS';
 
 requires 'Mouse';
-requires 'WebService::Simple';
 requires 'Web::Scraper';
 requires 'parent';
 requires 'Time::Piece';
+requires 'URI';
 
 test_requires 'Test::More' => '0.98';
 
