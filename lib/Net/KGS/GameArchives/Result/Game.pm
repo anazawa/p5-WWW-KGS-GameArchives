@@ -10,28 +10,15 @@ coerce 'Net::KGS::Type::StartTime'
     => from 'Str'
     => via { Time::Piece->strptime($_, '%D %I:%M %p') };
 
-subtype 'Net::KGS::Type::IsViewable'
-    => as 'Bool';
-
-coerce 'Net::KGS::Type::IsViewable'
-    => from 'Str'
-    => via { lc $_ eq 'yes' ? 1 : 0 };
-
 no Mouse::Util::TypeConstraints;
 
 our $VERSION = '0.01';
 
-has 'is_viewable' => (
-    is => 'ro',
-    isa => 'Net::KGS::Type::IsViewable',
-    coerce => 1,
-);
-
-has 'kifu_url' => (
+has kifu_url => (
     is => 'ro',
     isa => 'URI',
+    predicate => 'is_viewable',
 );
-
 
 has editor => (
     is => 'ro',
@@ -50,7 +37,7 @@ has black => (
     coerce => 1,
 );
 
-has 'setup' => (
+has setup => (
     is => 'ro',
     isa => 'Str',
 );

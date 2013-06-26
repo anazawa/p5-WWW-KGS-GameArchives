@@ -71,7 +71,7 @@ sub _scrape {
     for my $game ( @$games ) {
         my $maybe_setup = delete $game->{maybe_setup};
         next if exists $game->{black};
-        my $users = delete $game->{white};
+        my $users = delete $game->{white}; # <td colspan="2">
         if ( @$users == 1 ) { # Type: Demonstration
             $game->{editor} = $users->[0];
         }
