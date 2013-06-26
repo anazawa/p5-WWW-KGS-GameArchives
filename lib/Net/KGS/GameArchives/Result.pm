@@ -15,7 +15,18 @@ no Mouse::Util::TypeConstraints;
 has games => (
     is => 'ro',
     isa => 'Net::KGS::Type::Games',
+    default => sub { [] },
     coerce => 1,
+);
+
+has zip_url => (
+    is => 'ro',
+    isa => 'URI',
+);
+
+has tgz_url => (
+    is => 'ro',
+    isa => 'URI',
 );
 
 __PACKAGE__->meta->make_immutable;

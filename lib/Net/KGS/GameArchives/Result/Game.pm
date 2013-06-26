@@ -32,7 +32,8 @@ has 'kifu_url' => (
     isa => 'URI',
 );
 
-has 'setup' => (
+
+has editor => (
     is => 'ro',
     isa => 'Str',
 );
@@ -49,17 +50,7 @@ has black => (
     coerce => 1,
 );
 
-has editor => (
-    is => 'ro',
-    isa => 'Str',
-);
-
-has result => (
-    is => 'ro',
-    isa => 'Str',
-);
-
-has type => (
+has 'setup' => (
     is => 'ro',
     isa => 'Str',
 );
@@ -68,6 +59,16 @@ has start_time => (
     is => 'ro',
     isa => 'Net::KGS::Type::StartTime',
     coerce => 1,
+);
+
+has type => (
+    is => 'ro',
+    isa => 'Str',
+);
+
+has result => (
+    is => 'ro',
+    isa => 'Str',
 );
 
 __PACKAGE__->meta->make_immutable;
