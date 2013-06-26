@@ -1,18 +1,16 @@
 package Net::KGS::GameArchives;
-use Mouse;
+use Moo;
 use Net::KGS::GameArchives::Result;
 use URI;
 use Web::Scraper;
 
 has base_url => (
     is => 'ro',
-    isa => 'URI',
     default => sub { URI->new('http://www.gokgs.com/gameArchives.jsp') },
 );
 
 has param => (
     is => 'rw',
-    isa => 'HashRef',
     default => sub { {} },
 );
 
@@ -92,7 +90,5 @@ sub _scrape {
 
     $result;
 }
-
-__PACKAGE__->meta->make_immutable;
 
 1;
