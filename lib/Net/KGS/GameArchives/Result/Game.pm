@@ -39,10 +39,17 @@ has 'setup' => (
 
 has white => (
     is => 'ro',
-    isa => 'Str',
+    isa => 'ArrayRef[Str]',
+    coerce => 1,
 );
 
 has black => (
+    is => 'ro',
+    isa => 'ArrayRef[Str]',
+    coerce => 1,
+);
+
+has editor => (
     is => 'ro',
     isa => 'Str',
 );
