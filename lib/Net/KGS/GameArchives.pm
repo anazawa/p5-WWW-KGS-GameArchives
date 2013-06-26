@@ -45,7 +45,6 @@ sub _scrape {
         process '//h2', 'summary', 'TEXT';
         process '//table[1]//tr', 'games[]' => scraper {
             process '//a[contains(@href,".sgf")]', 'kifu_url' => '@href';
-            process '//td[1]', 'is_viewable' => 'TEXT';
             process '//td[2]//a', 'white[]' => 'TEXT';
             process '//td[3]//a', 'black[]' => 'TEXT';
             process '//td[3]', 'maybe_setup' => 'TEXT';
