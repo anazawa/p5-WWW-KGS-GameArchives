@@ -4,7 +4,6 @@ use feature qw/say/;
 use Getopt::Long;
 use Net::KGS::GameArchives;
 use Time::Piece;
-use Encode;
 use Cache::FileCache;
 
 my $cache = Cache::FileCache->new({
@@ -26,6 +25,8 @@ my $now = localtime;
 my $year = $query{year} || $now->year;
 my $month = $num2month[ $query{month} || $now->mon ];
 
+binmode STDOUT => ':utf8';
+
 say "KGS Game Archives";
 say "Games of KGS player $user, $month $year ($total_hits games)";
 say ".zip format: ", $result->zip_url if $result->zip_url;
@@ -37,7 +38,7 @@ for my $game ( @{$result->games} ) {
     say "Editor: ", $game->editor if $game->editor;
     say "White: ", join ", ", @{ $game->white } if $game->white;
     say "Black: ", join ", ", @{ $game->black } if $game->black;
-    say "Setup: ", encode( 'utf-8', $game->setup );
+    say "Setup: ", $game->setup;
     say "Start Time: ", $game->start_time;
     say "Type: ", $game->type;
     say "Result: ", $game->result;
