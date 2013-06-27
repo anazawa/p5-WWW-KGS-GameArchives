@@ -1,38 +1,57 @@
 use strict;
 use warnings;
 use feature qw/say/;
+use Cache::FileCache;
 use Getopt::Long;
 use Net::KGS::GameArchives;
 use Time::Piece;
-use Cache::FileCache;
 
 my $cache = Cache::FileCache->new({
-    cache_root         => './cache',
+    cache_root         => '/tmp',
     namespace          => 'Net::KGS::GameArchives',
-    default_expires_in => '5m',
+    default_expires_in => '30m',
 });
 
-GetOptions(\my %query, qw/user=s year=i month=i oldAccounts=s/);
+GetOptions(\my %query, qw/user=s year=i month=i day=i oldAccounts=s/);
 
-my $game_archives = Net::KGS::GameArchives->new( cache => $cache );
+my $game_archives = Net::KGS::GameArchives->new(
+    cache => $cache,
+    user  => delete $query{user},
+);
+
 my $result = $game_archives->search( %query );
+my @games = @{ $result->games };
 
-my $user = $query{user};
-my $total_hits = scalar @{ $result->games };
+#use Devel::Peek;
+#use utf8;
+#my $s = $games[0]->setup;
+#Dump $s;
 
-my @num2month = ( undef, qw(Jan Feb Mar Apr May Jun Aug Sep Oct Nov Dec) );
-my $now = localtime;
-my $year = $query{year} || $now->year;
-my $month = $num2month[ $query{month} || $now->mon ];
+#warn $s eq "19\x{d7}19 " ? 1 : 0;
 
-binmode STDOUT => ':utf8';
+warn $games[0]->white_rank->[0];
+#warn '"', $games[0]->result, '"';
+
+
+__END__
+
+#binmode STDOUT => ':utf8';
 
 say "KGS Game Archives";
-say "Games of KGS player $user, $month $year ($total_hits games)";
-say ".zip format: ", $result->zip_url if $result->zip_url;
-say ".tar.gz format: ", $result->tgz_url if $result->tgz_url;
 
-for my $game ( @{$result->games} ) {
+print "Games of KGS player ", $game_archives->user;
+if ( $query{year} and $query{month} and $query{day} ) {
+    print ", $query{year}-$query{month}-$query{day}";
+}
+elsif ( $query{year} and $query{month} ) {
+    print ", $query{year}-$query{month}";
+}
+elsif ( $query{year} ) {
+    print ", $query{year}";
+}
+say " (" . @games . " games)";
+
+for my $game ( @games ) {
     say "-----";
     say "Viewable?: ", $game->is_viewable ? "Yes (" . $game->kifu_url . ")" : "No";
     say "Editor: ", $game->editor if $game->editor;
@@ -43,5 +62,6 @@ for my $game ( @{$result->games} ) {
     say "Type: ", $game->type;
     say "Result: ", $game->result;
 }
+
 
 

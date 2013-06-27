@@ -1,6 +1,7 @@
 package Net::KGS::GameArchives;
 use Moo;
 use Net::KGS::GameArchives::Result;
+use Time::Piece;
 use URI;
 use Web::Scraper;
 
@@ -9,9 +10,13 @@ has base_url => (
     default => sub { URI->new('http://www.gokgs.com/gameArchives.jsp') },
 );
 
-has param => (
-    is => 'rw',
-    default => sub { {} },
+has user => (
+    is => 'ro',
+    required => 1,
+);
+
+has urls => (
+    is => 'lazy',
 );
 
 has cache => (
@@ -19,20 +24,79 @@ has cache => (
     predicate => '_has_cache',
 );
 
+sub _build_urls {
+    my $self = shift;
+    my $url  = $self->base_url->clone;
+    my $now  = gmtime;
+
+    $url->query_form(
+        user  => $self->user,
+        year  => $now->year,
+        month => $now->mon,
+    );
+
+    my $result = $self->scrape( $url );
+    my $urls = $result->{urls} || [];
+
+    push @$urls, $url;
+
+    $urls;
+}
+
 sub search {
     my $self  = shift;
     my %param = @_ == 1 ? %{$_[0]} : @_;
 
-    my $uri = $self->base_url->clone;
-    $uri->query_form( %{ $self->param }, %param );
+    $param{user} = $self->user;
 
-    my $cache = $self->_has_cache && $self->cache->get($uri);
+    my $year = $param{year};
+    my $month = $param{month};
+    my $day = $param{day};
+
+    if ( $year and $month and $day ) {
+        my $url = $self->base_url->clone;
+        $url->query_form( %param );
+        my $result = Net::KGS::GameArchives::Result->new( $self->scrape($url) );
+        my $games = $result->games;
+        @$games = grep { $_->start_time->mday == $day } @$games;
+        return $result;
+    }
+    elsif ( $year and $month ) {
+        my $url = $self->base_url->clone;
+        $url->query_form( %param );
+        my $result = $self->scrape( $url );
+        return Net::KGS::GameArchives::Result->new( $result );
+    }
+    elsif ( $year ) {
+        my @urls = grep { {$_->query_form}->{year} == $year } @{$self->urls};
+        my @results = map { $self->scrape($_) } @urls;
+        my @games = map { @{$_->{games}} } @results;
+        return Net::KGS::GameArchives::Result->new( games => \@games );
+    }
+    else {
+        my @results = map { $self->scrape($_) } @{$self->urls};
+        my @games = map { @{$_->{games}} } @results;
+        return Net::KGS::GameArchives::Result->new( games => \@games );
+    }
+
+    #my @games = map { @{$_->{games}} } @results;
+    #my @tgz_urls = map { $_->{tgz_url} } @results;
+    #my @zip_urls = map { $_->{zip_url} } @resylts;
+
+    #for my $result ( @results ) {
+    #    push @games, @{$result->{games}};
+    #    push @tgz_urls, $result->{tgz_url};
+    #    push @zip_urls, $result->{zip_url};
+    #}
+
+}
+
+sub scrape {
+    my ( $self, $url ) = @_;
+    my $cache = $self->_has_cache && $self->cache->get($url);
     return $cache if $cache;
-
-    my $result = Net::KGS::GameArchives::Result->new( $self->_scrape($uri) );
-
-    $self->cache->set( $uri => $result ) if $self->_has_cache;
-
+    my $result = $self->_scrape( $url );
+    $self->cache->set( $url => $result ) if $self->_has_cache;
     $result;
 }
 
@@ -53,6 +117,7 @@ sub _scrape {
         };
         process '//a[contains(@href,".zip")]', 'zip_url' => '@href';
         process '//a[contains(@href,".tar.gz")]', 'tgz_url' => '@href';
+        process '//table[2]//a', 'urls[]' => '@href';
     }->scrape( $stuff );
 
     my ( $total_hits ) = do {
@@ -60,7 +125,10 @@ sub _scrape {
         $summary ? $summary =~ /\((\d+)\sgames\)/ : 0;
     };
 
-    return {} if $total_hits == 0;
+    if ( $total_hits == 0 ) {
+        $result->{games} = [];
+        $result->{urls}  = [];
+    }
 
     my $games = $result->{games};
     shift @$games; # remove <table> heads
@@ -87,6 +155,8 @@ sub _scrape {
         $game->{start_time} = delete $game->{setup};
         $game->{setup}      = $maybe_setup;
     }
+
+    @$games = reverse @$games; # sort by Start Time in descending order
 
     $result;
 }

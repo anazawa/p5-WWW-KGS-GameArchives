@@ -10,6 +10,7 @@ has kifu_url => (
 );
 
 has editor => ( is => 'ro' );
+
 has white  => ( is => 'ro' );
 has black  => ( is => 'ro' );
 
@@ -17,7 +18,7 @@ has setup => ( is => 'ro' );
 
 has start_time => (
     is => 'ro',
-    coerce => sub { Time::Piece->strptime($_[0], '%D %I:%M %p') },
+    coerce => sub { gmtime->strptime($_[0], '%D %I:%M %p') },
 );
 
 has type => ( is => 'ro' );
