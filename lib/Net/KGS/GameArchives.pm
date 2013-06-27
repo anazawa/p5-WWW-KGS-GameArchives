@@ -13,6 +13,12 @@ has base_url => (
 has user => (
     is => 'ro',
     required => 1,
+    isa => sub {
+        my $user = shift;
+        die "Must be 1 to 10 characters long" if !$user or length $user > 10;
+        die "Must contain only English letters and digits" if $user =~ /\W/;
+        die "Must start with a letter" if $user =~ /^[0-9]/;
+    },
 );
 
 has urls => (
@@ -114,6 +120,7 @@ sub _scrape {
             process '//td[5]', 'start_time' => 'TEXT';
             process '//td[6]', 'type' => 'TEXT';
             process '//td[7]', 'result' => 'TEXT';
+            process '//td[8]', 'tag' => 'TEXT';
         };
         process '//a[contains(@href,".zip")]', 'zip_url' => '@href';
         process '//a[contains(@href,".tar.gz")]', 'tgz_url' => '@href';
@@ -150,6 +157,7 @@ sub _scrape {
             $game->{white}  = [ @{$users}[1,2] ];
             $game->{black}  = [ @{$users}[3,4] ];
         }
+        $game->{tag}        = delete $game->{result} if exists $game->{result};
         $game->{result}     = delete $game->{type};
         $game->{type}       = delete $game->{start_time};
         $game->{start_time} = delete $game->{setup};

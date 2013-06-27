@@ -35,6 +35,8 @@ has type => ( is => 'ro', required => 1 );
 
 has result => ( is => 'ro', required => 1 );
 
+has tag => ( is => 'ro', default => sub { q{} } );
+
 sub is_finished {
     lc $_[0]->result ne 'unfinished';
 }
