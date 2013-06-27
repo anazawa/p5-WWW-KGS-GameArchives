@@ -1,100 +1,31 @@
 package Net::KGS::GameArchives;
 use Moo;
+use Net::KGS::GameArchives::Query;
 use Net::KGS::GameArchives::Result;
 use Time::Piece;
-use URI;
 use Web::Scraper;
 
-has base_url => (
-    is => 'ro',
-    default => sub { URI->new('http://www.gokgs.com/gameArchives.jsp') },
-);
+has query => ( is => 'ro', default => sub { {} } );
 
-has user => (
-    is => 'ro',
-    required => 1,
-    isa => sub {
-        my $user = shift;
-        die "Must be 1 to 10 characters long" if !$user or length $user > 10;
-        die "Must contain only English letters and digits" if $user =~ /\W/;
-        die "Must start with a letter" if $user =~ /^[0-9]/;
-    },
-);
-
-has urls => (
-    is => 'lazy',
-);
-
-has cache => (
-    is => 'ro',
-    predicate => '_has_cache',
-);
-
-sub _build_urls {
-    my $self = shift;
-    my $url  = $self->base_url->clone;
-    my $now  = gmtime;
-
-    $url->query_form(
-        user  => $self->user,
-        year  => $now->year,
-        month => $now->mon,
-    );
-
-    my $result = $self->scrape( $url );
-    my $urls = $result->{urls} || [];
-
-    push @$urls, $url;
-
-    $urls;
-}
+has cache => ( is => 'ro', predicate => '_has_cache' );
 
 sub search {
-    my $self  = shift;
-    my %param = @_ == 1 ? %{$_[0]} : @_;
+    my $self    = shift;
+    my %default = %{ $self->query };
+    my $query   = Net::KGS::GameArchives::Query->new( %default, @_ );
+    my $year    = $query->year;
+    my $uri     = $query->as_uri;
+    my $result  = $self->scrape( $uri );
 
-    $param{user} = $self->user;
+    return Net::KGS::GameArchives::Result->new($result) if $query->month;
 
-    my $year = $param{year};
-    my $month = $param{month};
-    my $day = $param{day};
+    my @urls = @{ $result->{urls} || [] };
+       @urls = grep { {$_->query_form}->{year} == $year } @urls if $year;
 
-    if ( $year and $month and $day ) {
-        my $url = $self->base_url->clone;
-        $url->query_form( %param );
-        my $result = Net::KGS::GameArchives::Result->new( $self->scrape($url) );
-        my $games = $result->games;
-        @$games = grep { $_->start_time->mday == $day } @$games;
-        return $result;
-    }
-    elsif ( $year and $month ) {
-        my $url = $self->base_url->clone;
-        $url->query_form( %param );
-        my $result = $self->scrape( $url );
-        return Net::KGS::GameArchives::Result->new( $result );
-    }
-    elsif ( $year ) {
-        my @urls = grep { {$_->query_form}->{year} == $year } @{$self->urls};
-        my @results = map { $self->scrape($_) } @urls;
-        my @games = map { @{$_->{games}} } @results;
-        return Net::KGS::GameArchives::Result->new( games => \@games );
-    }
-    else {
-        my @results = map { $self->scrape($_) } @{$self->urls};
-        my @games = map { @{$_->{games}} } @results;
-        return Net::KGS::GameArchives::Result->new( games => \@games );
-    }
+    my @results = map { $self->scrape($_) } @urls;
+    push @results, $result if !$year or {$uri->query_form}->{year} == $year;
 
-    #my @games = map { @{$_->{games}} } @results;
-    #my @tgz_urls = map { $_->{tgz_url} } @results;
-    #my @zip_urls = map { $_->{zip_url} } @resylts;
-
-    #for my $result ( @results ) {
-    #    push @games, @{$result->{games}};
-    #    push @tgz_urls, $result->{tgz_url};
-    #    push @zip_urls, $result->{zip_url};
-    #}
-
+    Net::KGS::GameArchives::Result->new( @results );
 }
 
 sub scrape {
