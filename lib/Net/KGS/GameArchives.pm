@@ -115,11 +115,9 @@ sub _build_uri {
 
 sub scrape {
     my ( $self, $uri, $expires ) = @_;
-    my $cache = $self->_has_cache && $self->cache->get( $uri );
+    my $result = $self->_has_cache && $self->cache->get( $uri );
 
-    return $cache if $cache;
-
-    my $result;
+    return $result if $result;
 
     try {
         $result = $self->_scraper->scrape( $uri );
