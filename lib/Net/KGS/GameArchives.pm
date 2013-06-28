@@ -1,44 +1,92 @@
 package Net::KGS::GameArchives;
+use Carp qw/croak/;
 use Moo;
-use Net::KGS::GameArchives::Query;
 use Net::KGS::GameArchives::Result;
 use Time::Piece;
+use URI;
 use Web::Scraper;
 
-has query => ( is => 'ro', default => sub { {} } );
+has base_uri => (
+    is => 'ro',
+    default => sub { URI->new('http://www.gokgs.com/gameArchives.jsp') },
+);
+
+has user => (
+    is => 'ro',
+    required => 1,
+    isa => sub {
+        my $user = shift;
+        die "Must be 1 to 10 characters long" if !$user or length $user > 10;
+        die "Must contain only English letters and digits" if $user =~ /\W/;
+        die "Must start with a letter" if $user =~ /^[0-9]/;
+    },
+);
+
+has tags => ( is => 'ro' );
+
+has old_accounts => ( is => 'ro' );
 
 has cache => ( is => 'ro', predicate => '_has_cache' );
 
 sub search {
-    my $self    = shift;
-    my %default = %{ $self->query };
-    my $query   = Net::KGS::GameArchives::Query->new( %default, @_ );
-    my $year    = $query->year;
-    my $uri     = $query->as_uri;
-    my $result  = $self->scrape( $uri );
+    my $self  = shift;
+    my %query = @_ == 1 ? %{$_[0]} : @_;
+    my $year  = int( $query{year}  || 0 );
+    my $month = int( $query{month} || 0 );
+    my $now   = gmtime;
 
-    return Net::KGS::GameArchives::Result->new($result) if $query->month;
+    croak "Invalid year: $year" if $year and $year > $now->year;
+    croak "Invalid month: $month" if $month and $month > 12;
 
-    my @urls = @{ $result->{urls} || [] };
+    my $index_uri = $self->_build_uri(
+        year  => $now->year,
+        month => $now->mon,
+    );
+
+    my $request_uri = $self->_build_uri(
+        year  => $year  || $now->year,
+        month => $month || $now->mon,
+    );
+
+    if ( $month ) {
+        my $expires = $request_uri->eq($index_uri) ? '1d' : 'never';
+        my $result = $self->scrape( $request_uri, $expires );
+        return Net::KGS::GameArchives::Result->new( $result );
+    }
+
+    my $index = $self->scrape( $index_uri, '1d' );
+
+    my @urls = @{ $index->{urls} || [] };
        @urls = grep { {$_->query_form}->{year} == $year } @urls if $year;
 
-    my @results = map { $self->scrape($_) } @urls;
-    push @results, $result if !$year or {$uri->query_form}->{year} == $year;
+    my @results = map { $self->scrape($_, 'never') } @urls;
+    push @results, $index if !$year or $year == $now->year;
 
     Net::KGS::GameArchives::Result->new( @results );
 }
 
-sub scrape {
-    my ( $self, $url ) = @_;
-    my $cache = $self->_has_cache && $self->cache->get($url);
-    return $cache if $cache;
-    my $result = $self->_scrape( $url );
-    $self->cache->set( $url => $result ) if $self->_has_cache;
-    $result;
+sub _build_uri {
+    my ( $self, %query ) = @_;
+    my $uri = $self->base_uri->clone;
+
+    my @query;
+
+    push @query, 'user', $self->user;
+    push @query, 'oldAccounts', 'y' if $self->old_accounts;
+    push @query, 'tags', 't' if $self->tags;
+    push @query, 'year', $query{year} if exists $query{year};
+    push @query, 'month', $query{month} if exists $query{month};
+
+    $uri->query_form( @query );
+
+    $uri;
 }
 
-sub _scrape {
-    my ( $self, $stuff ) = @_;
+sub scrape {
+    my ( $self, $uri, $expires ) = @_;
+    my $cache = $self->_has_cache && $self->cache->get( $uri );
+
+    return $cache if $cache;
 
     my $result = scraper {
         process '//h2', 'summary', 'TEXT';
@@ -56,7 +104,7 @@ sub _scrape {
         process '//a[contains(@href,".zip")]', 'zip_url' => '@href';
         process '//a[contains(@href,".tar.gz")]', 'tgz_url' => '@href';
         process '//table[2]//a', 'urls[]' => '@href';
-    }->scrape( $stuff );
+    }->scrape( $uri );
 
     my ( $total_hits ) = do {
         my $summary = delete $result->{summary};
@@ -96,6 +144,8 @@ sub _scrape {
     }
 
     @$games = reverse @$games; # sort by Start Time in descending order
+
+    $self->cache->set($uri, $result, $expires) if $self->_has_cache;
 
     $result;
 }

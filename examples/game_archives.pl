@@ -9,13 +9,15 @@ use Time::Piece;
 my $cache = Cache::FileCache->new({
     cache_root         => '/tmp',
     namespace          => 'Net::KGS::GameArchives',
-    default_expires_in => '30m',
+    #default_expires_in => '30m',
 });
 
-GetOptions(\my %query, qw/user=s year=i month=i oldAccounts=s/);
+GetOptions(\my %query, qw/user=s year=i month=i old_accounts tags/)
+    or exit 1;
 
 my $game_archives = Net::KGS::GameArchives->new(
     cache => $cache,
+    %query,
 );
 
 my $result = $game_archives->search( %query );
@@ -23,9 +25,10 @@ my @games = @{ $result->games };
 
 say "KGS Game Archives";
 
-print "Games of KGS player ", $query{user};
-if ( $query{year} and $query{month} ) {
-    print ", $query{year}-$query{month}";
+print "Games ", ($query{tags} ? "tagged by " : "of KGS player "), $query{user};
+if ( $query{month} ) {
+    my $year = $query{year} || gmtime->year;
+    print ", $year-$query{month}";
 }
 elsif ( $query{year} ) {
     print ", $query{year}";
@@ -42,6 +45,7 @@ for my $game ( @games ) {
     say "Start Time: ", $game->start_time;
     say "Type: ", $game->type;
     say "Result: ", $game->result;
+    say "Tag: ", $game->tag if $game->has_tag;
 }
 
 
