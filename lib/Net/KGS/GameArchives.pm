@@ -1,8 +1,9 @@
 package Net::KGS::GameArchives;
-use Carp qw/croak/;
+use Carp;
 use Moo;
 use Net::KGS::GameArchives::Result;
 use Time::Piece;
+use Try::Tiny;
 use URI;
 use Web::Scraper;
 
@@ -28,6 +29,35 @@ has old_accounts => ( is => 'ro' );
 
 has cache => ( is => 'ro', predicate => '_has_cache' );
 has cache_expires_in => ( is => 'rw', default => '1d' );
+
+has _scraper => ( is => 'lazy' );
+has user_agent => ( is => 'ro', predicate => '_has_user_agent' );
+
+sub _build__scraper {
+    my $self = shift;
+
+    my $scraper = scraper {
+        process '//h2', 'summary', 'TEXT';
+        process '//table[1]//tr', 'games[]' => scraper {
+            process '//a[contains(@href,".sgf")]', 'kifu_url' => '@href';
+            process '//td[2]//a', 'white[]' => 'TEXT';
+            process '//td[3]//a', 'black[]' => 'TEXT';
+            process '//td[3]', 'maybe_setup' => 'TEXT';
+            process '//td[4]', 'setup' => 'TEXT';
+            process '//td[5]', 'start_time' => 'TEXT';
+            process '//td[6]', 'type' => 'TEXT';
+            process '//td[7]', 'result' => 'TEXT';
+            process '//td[8]', 'tag' => 'TEXT';
+        };
+        process '//a[contains(@href,".zip")]', 'zip_url' => '@href';
+        process '//a[contains(@href,".tar.gz")]', 'tgz_url' => '@href';
+        process '//table[2]//a', 'urls[]' => '@href';
+    };
+
+    $scraper->user_agent( $self->user_agent ) if $self->_has_user_agent;
+
+    $scraper;
+}
 
 sub search {
     my $self    = shift;
@@ -89,28 +119,21 @@ sub scrape {
 
     return $cache if $cache;
 
-    my $result = scraper {
-        process '//h2', 'summary', 'TEXT';
-        process '//table[1]//tr', 'games[]' => scraper {
-            process '//a[contains(@href,".sgf")]', 'kifu_url' => '@href';
-            process '//td[2]//a', 'white[]' => 'TEXT';
-            process '//td[3]//a', 'black[]' => 'TEXT';
-            process '//td[3]', 'maybe_setup' => 'TEXT';
-            process '//td[4]', 'setup' => 'TEXT';
-            process '//td[5]', 'start_time' => 'TEXT';
-            process '//td[6]', 'type' => 'TEXT';
-            process '//td[7]', 'result' => 'TEXT';
-            process '//td[8]', 'tag' => 'TEXT';
-        };
-        process '//a[contains(@href,".zip")]', 'zip_url' => '@href';
-        process '//a[contains(@href,".tar.gz")]', 'tgz_url' => '@href';
-        process '//table[2]//a', 'urls[]' => '@href';
-    }->scrape( $uri );
+    my $result;
+
+    try {
+        $result = $self->_scraper->scrape( $uri );
+    }
+    catch {
+        carp "Failed to scrape $uri: $_";
+        $expires = 'now';
+        $result = {};
+    };
 
     my $total_hits = 0;
     if ( my $summary = delete $result->{summary} ) {
         ( $total_hits ) = $summary =~ /\((\d+) games?\)$/;
-        $summary =~ /tagged by (\S+),/ and $result->{tagged_by} = $1;
+        $summary =~ /tagged by (\w+),/ and $result->{tagged_by} = $1;
     }
 
     if ( $total_hits == 0 ) {
@@ -121,7 +144,7 @@ sub scrape {
     my $games = $result->{games};
     shift @$games; # remove <table> heads
 
-    croak "Failed to scrape $uri" if @$games != $total_hits;
+    croak "Failed to parse $uri" if @$games != $total_hits;
 
     for my $game ( @$games ) {
         my $maybe_setup = delete $game->{maybe_setup};
