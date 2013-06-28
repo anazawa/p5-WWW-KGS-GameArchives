@@ -9,7 +9,7 @@ use Time::Piece;
 my $cache = Cache::FileCache->new({
     cache_root         => '/tmp',
     namespace          => 'Net::KGS::GameArchives',
-    #default_expires_in => '30m',
+    default_expires_in => '1M',,
 });
 
 GetOptions(\my %query, qw/user=s year=i month=i old_accounts tags/)

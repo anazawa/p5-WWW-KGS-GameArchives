@@ -28,12 +28,15 @@ has old_accounts => ( is => 'ro' );
 
 has cache => ( is => 'ro', predicate => '_has_cache' );
 
+has cache_expires_in => ( is => 'rw', default => sub { '1d' } );
+
 sub search {
-    my $self  = shift;
-    my %query = @_ == 1 ? %{$_[0]} : @_;
-    my $year  = int( $query{year}  || 0 );
-    my $month = int( $query{month} || 0 );
-    my $now   = gmtime;
+    my $self    = shift;
+    my %query   = @_ == 1 ? %{$_[0]} : @_;
+    my $year    = int( $query{year}  || 0 );
+    my $month   = int( $query{month} || 0 );
+    my $expires = $self->cache_expires_in;
+    my $now     = gmtime;
 
     croak "Invalid year: $year" if $year and $year > $now->year;
     croak "Invalid month: $month" if $month and $month > 12;
@@ -43,24 +46,26 @@ sub search {
         month => $now->mon,
     );
 
-    my $request_uri = $self->_build_uri(
-        year  => $year  || $now->year,
-        month => $month || $now->mon,
-    );
-
     if ( $month ) {
-        my $expires = $request_uri->eq($index_uri) ? '1d' : 'never';
-        my $result = $self->scrape( $request_uri, $expires );
+        if ( (!$year or $year == $now->year) and $month == $now->mon ) {
+            my $result = $self->scrape( $index_uri, $expires );
+            return Net::KGS::GameArchives::Result->new( $result );
+        }
+        my $uri = $self->_build_uri(
+            year  => $year || $now->year,
+            month => $month,
+        );
+        my $result = $self->scrape( $uri );
         return Net::KGS::GameArchives::Result->new( $result );
     }
 
-    my $index = $self->scrape( $index_uri, '1d' );
+    my $result = $self->scrape( $index_uri, $expires );
 
-    my @urls = @{ $index->{urls} || [] };
+    my @urls = @{ $result->{urls} || [] };
        @urls = grep { {$_->query_form}->{year} == $year } @urls if $year;
 
-    my @results = map { $self->scrape($_, 'never') } @urls;
-    push @results, $index if !$year or $year == $now->year;
+    my @results = map { $self->scrape($_) } @urls;
+    push @results, $result if !$year or $year == $now->year;
 
     Net::KGS::GameArchives::Result->new( @results );
 }
@@ -118,6 +123,8 @@ sub scrape {
 
     my $games = $result->{games};
     shift @$games; # remove <table> heads
+
+    croak "Failed to scrape $uri" if @$games != $total_hits;
 
     for my $game ( @$games ) {
         my $maybe_setup = delete $game->{maybe_setup};
