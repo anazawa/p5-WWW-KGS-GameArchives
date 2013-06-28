@@ -113,7 +113,7 @@ sub scrape {
 
     my ( $total_hits ) = do {
         my $summary = delete $result->{summary};
-        $summary ? $summary =~ /\((\d+)\sgames\)/ : 0;
+        $summary ? $summary =~ /\((\d+)\sgames?\)$/ : 0;
     };
 
     if ( $total_hits == 0 ) {
@@ -152,7 +152,7 @@ sub scrape {
 
     @$games = reverse @$games; # sort by Start Time in descending order
 
-    $self->cache->set($uri, $result, $expires) if $self->_has_cache;
+    $self->cache->set( $uri => $result, $expires ) if $self->_has_cache;
 
     $result;
 }
