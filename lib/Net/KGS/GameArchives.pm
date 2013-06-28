@@ -27,8 +27,7 @@ has tags => ( is => 'ro' );
 has old_accounts => ( is => 'ro' );
 
 has cache => ( is => 'ro', predicate => '_has_cache' );
-
-has cache_expires_in => ( is => 'rw', default => sub { '1d' } );
+has cache_expires_in => ( is => 'rw', default => '1d' );
 
 sub search {
     my $self    = shift;
@@ -41,23 +40,20 @@ sub search {
     croak "Invalid year: $year" if $year and $year > $now->year;
     croak "Invalid month: $month" if $month and $month > 12;
 
+    if ( $month ) {
+        my $uri = $self->_build_uri(
+            year  => $year ||= $now->year,
+            month => $month,
+        );
+        my $is_index = $year == $now->year && $month == $now->mon;
+        my $result = $self->scrape( $uri, $is_index && $expires );
+        return Net::KGS::GameArchives::Result->new( $result );
+    }
+
     my $index_uri = $self->_build_uri(
         year  => $now->year,
         month => $now->mon,
     );
-
-    if ( $month ) {
-        if ( (!$year or $year == $now->year) and $month == $now->mon ) {
-            my $result = $self->scrape( $index_uri, $expires );
-            return Net::KGS::GameArchives::Result->new( $result );
-        }
-        my $uri = $self->_build_uri(
-            year  => $year || $now->year,
-            month => $month,
-        );
-        my $result = $self->scrape( $uri );
-        return Net::KGS::GameArchives::Result->new( $result );
-    }
 
     my $result = $self->scrape( $index_uri, $expires );
 
@@ -111,10 +107,11 @@ sub scrape {
         process '//table[2]//a', 'urls[]' => '@href';
     }->scrape( $uri );
 
-    my ( $total_hits ) = do {
-        my $summary = delete $result->{summary};
-        $summary ? $summary =~ /\((\d+)\sgames?\)$/ : 0;
-    };
+    my $total_hits = 0;
+    if ( my $summary = delete $result->{summary} ) {
+        ( $total_hits ) = $summary =~ /\((\d+) games?\)$/;
+        $summary =~ /tagged by (\S+),/ and $result->{tagged_by} = $1;
+    }
 
     if ( $total_hits == 0 ) {
         $result->{games} = [];

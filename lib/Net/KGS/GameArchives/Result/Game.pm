@@ -9,10 +9,10 @@ has kifu_url => (
     predicate => 'is_viewable',
 );
 
-has editor => ( is => 'ro', predicate => 'has_editor' );
+has editor => ( is => 'ro', predicate => 1 );
 
-has white => ( is => 'ro', predicate => 'has_white' );
-has black => ( is => 'ro', predicate => 'has_black' );
+has white => ( is => 'ro', predicate => 1 );
+has black => ( is => 'ro', predicate => 1 );
 
 has setup => (
     is => 'ro',
@@ -35,7 +35,7 @@ has type => ( is => 'ro', required => 1 );
 
 has result => ( is => 'ro', required => 1 );
 
-has tag => ( is => 'ro', predicate => 'has_tag' );
+has tag => ( is => 'ro', predicate => 1 );
 
 sub is_finished {
     lc $_[0]->result ne 'unfinished';
