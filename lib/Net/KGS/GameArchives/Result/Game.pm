@@ -20,8 +20,9 @@ has handicap => ( is => 'ro', predicate => 1 );
 
 has start_time => (
     is => 'ro',
-    required => 1,
     coerce => sub { gmtime->strptime($_[0], '%D %I:%M %p') },
+    handles => { date => 'ymd' },
+    required => 1,
 );
 
 has type => ( is => 'ro', required => 1 );
