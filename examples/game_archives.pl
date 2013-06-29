@@ -16,16 +16,22 @@ GetOptions(\my %query, qw/user=s year=i month=i old_accounts tags/)
     or exit 1;
 
 my $game_archives = Net::KGS::GameArchives->new(
-    cache => $cache,
+    #cache => $cache,
     %query,
 );
 
-my $result = $game_archives->search( %query );
+my $result = $game_archives->parse;
 my @games = @{ $result->games };
 
 say "KGS Game Archives";
 
-print "Games ", ($query{tags} ? "tagged by " : "of KGS player "), $query{user};
+if ( $result->tagged_by ) {
+    print "Games tagged by ", $result->tagged_by;
+}
+else {
+    print "Games of KGS player ", $query{user};
+}
+
 if ( $query{month} ) {
     my $year = $query{year} || gmtime->year;
     print ", $year-$query{month}";

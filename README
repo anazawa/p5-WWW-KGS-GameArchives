@@ -1,0 +1,28 @@
+NAME
+    Net::KGS::GameArchives - Interface to KGS Go Server Game Archives
+
+SYNOPSIS
+      use Net::KGS::GameArchives;
+      my $archives = Net::KGS::GameArchives->new( user => 'YourAccount' );
+      my $result = $archives->parse; # => Net::KGS::GameAcrhives::Result object
+
+DISCLAIMER
+    According to KGS's "robots.txt", bots are not allowed to crawl the Game
+    Archives:
+
+      User-agent: *
+      Disallow: /gameArchives.jsp
+
+    Although this module can be used to implement crawlers, the author
+    doesn't intend to violate their policy. Use at your own risk.
+
+SEE ALSO
+    <http://www.gokgs.com/robots.txt>
+
+AUTHOR
+    Ryo Anazawa (anazawa@cpan.org)
+
+LICENSE
+    This module is free software; you can redistribute it and/or modify it
+    under the same terms as Perl itself. See perlartistic.
+
