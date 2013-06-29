@@ -41,7 +41,9 @@ for my $game ( @games ) {
     say "Editor: ", $game->editor if $game->has_editor;
     say "White: ", join ", ", @{ $game->white } if $game->has_white;
     say "Black: ", join ", ", @{ $game->black } if $game->has_black;
-    say "Setup: ", $game->setup;
+    #say "Setup: ", $game->setup;
+    say "Handicap: ", $game->handicap if $game->has_handicap;
+    say "Size: ", $game->size, 'x', $game->size;
     say "Start Time: ", $game->start_time;
     say "Type: ", $game->type;
     say "Result: ", $game->result;

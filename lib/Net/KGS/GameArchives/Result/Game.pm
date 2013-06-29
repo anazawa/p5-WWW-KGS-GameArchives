@@ -14,16 +14,9 @@ has editor => ( is => 'ro', predicate => 1 );
 has white => ( is => 'ro', predicate => 1 );
 has black => ( is => 'ro', predicate => 1 );
 
-has setup => (
-    is => 'ro',
-    required => 1,
-    coerce => sub { # "19×19 " -> "19×19" -> "19x19" 
-        my $setup = shift;
-        $setup =~ s/\s+$//;
-        $setup =~ s/\xd7/x/;
-        $setup;
-    },
-);
+has size => ( is => 'ro', required => 1 );
+
+has handicap => ( is => 'ro', predicate => 1 );
 
 has start_time => (
     is => 'ro',
@@ -36,6 +29,15 @@ has type => ( is => 'ro', required => 1 );
 has result => ( is => 'ro', required => 1 );
 
 has tag => ( is => 'ro', predicate => 1 );
+
+sub BUILDARGS {
+    my ( $self, $game ) = @_;
+    my $setup = delete $game->{setup};
+    my ( $size, $handicap ) = $setup =~ /^(\d+)\x{d7}\d+ (?:H(\d+))?$/;
+    $game->{handicap} = $handicap if $handicap;
+    $game->{size} = $size;
+    $game;
+}
 
 sub is_finished {
     lc $_[0]->result ne 'unfinished';
@@ -73,18 +75,6 @@ sub is_simul {
     lc $_[0]->type eq 'simul';
 }
 
-sub handicap {
-    my $self = shift;
-    my ( $handicap ) = $self->setup =~ /\sH(\d+)$/;
-    $handicap || 0;
-}
-
-sub size {
-    my $self = shift;
-    my ( $size ) = $_[0]->setup =~ /^(\d+)x/; # Go board is square
-    $size;
-}
-
 sub editor_name {
     my $self = shift;
     my ( $name ) = $self->editor =~ /^(\S+)/;
@@ -115,6 +105,21 @@ sub black_name {
 sub black_rank {
     my $self = shift;
     [ map { /\[(\S+)\]$/ } @{ $self->black } ];
+}
+
+sub as_hashref {
+    my $self = shift;
+
+    my %game = (
+        result => $self->result,
+        size   => $self->size,
+        type   => $self->type,
+    );
+
+    $game{kifu_url} = $self->kifu_url if $self->is_viewable;
+    $game{handicap} = $self->handicap if $self->has_handicap;
+
+    \%game;
 }
 
 1;
