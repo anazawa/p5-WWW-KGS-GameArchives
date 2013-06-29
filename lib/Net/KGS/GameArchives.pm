@@ -30,10 +30,10 @@ has old_accounts => ( is => 'ro' );
 has cache => ( is => 'ro', predicate => '_has_cache' );
 has cache_expires_in => ( is => 'rw', default => '1d' );
 
-has _scraper => ( is => 'lazy' );
+has _scraper => ( is => 'ro', builder => '_build_scraper', lazy => 1 );
 has user_agent => ( is => 'ro', predicate => '_has_user_agent' );
 
-sub _build__scraper {
+sub _build_scraper {
     my $self = shift;
 
     my $scraper = scraper {
@@ -41,7 +41,6 @@ sub _build__scraper {
         process '//table[1]//tr', 'games[]' => scraper {
             process '//a[contains(@href,".sgf")]', 'kifu_url' => '@href';
             process '//td[2]//a', 'white[]' => { name => 'TEXT', url => '@href' };
-            #process '//td[3]//a', 'black[]' => 'TEXT';
             process '//td[3]//a', 'black[]' => { name => 'TEXT', url => '@href' };
             process '//td[3]', 'maybe_setup' => 'TEXT';
             process '//td[4]', 'setup' => 'TEXT';
