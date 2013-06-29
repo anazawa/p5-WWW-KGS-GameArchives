@@ -17,9 +17,9 @@ has user => (
     required => 1,
     isa => sub {
         my $user = shift;
-        die 'Must must be 1 to 10 characters long' if !$user or length $user > 10;
+        die 'Must be 1 to 10 characters long' if !$user or length $user > 10;
         die 'Must contain only English letters and digits' if $user =~ /\W/;
-        die 'Must must start with a letter' if $user =~ /^[0-9]/;
+        die 'Must start with a letter' if $user =~ /^[0-9]/;
     },
 );
 
