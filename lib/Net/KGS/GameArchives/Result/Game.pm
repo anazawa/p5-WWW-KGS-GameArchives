@@ -87,38 +87,6 @@ sub is_simul {
     lc $_[0]->type eq 'simul';
 }
 
-sub editor_name {
-    my $self = shift;
-    my ( $name ) = $self->editor =~ /^(\S+)/;
-    $name;
-}
-
-sub editor_rank {
-    my $self = shift;
-    my ( $rank ) = $self->editor =~ /\[(\S+)\]$/;
-    $rank;
-}
-
-sub white_name {
-    my $self = shift;
-    [ map { /^(\S+)/ } @{ $self->white } ];
-}
-
-sub white_rank {
-    my $self = shift;
-    [ map { /\[(\S+)\]$/ } @{ $self->white } ];
-}
-
-sub black_name {
-    my $self = shift;
-    [ map { /^(\S+)/ } @{ $self->black } ];
-}
-
-sub black_rank {
-    my $self = shift;
-    [ map { /\[(\S+)\]$/ } @{ $self->black } ];
-}
-
 sub as_hashref {
     my $self = shift;
 
