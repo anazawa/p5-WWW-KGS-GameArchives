@@ -1,5 +1,6 @@
 package Net::KGS::GameArchives::Result::Game;
 use Moo;
+use Net::KGS::GameArchives::Result::User;
 use Time::Piece;
 
 our $VERSION = '0.01';
@@ -9,10 +10,20 @@ has kifu_url => (
     predicate => 'is_viewable',
 );
 
-has editor => ( is => 'ro', predicate => 1 );
+has editor => (
+    is => 'ro',
+    coerce => sub { Net::KGS::GameArchives::Result::User->new($_[0]) },
+    predicate => 1,
+);
 
-has white => ( is => 'ro', predicate => 1 );
-has black => ( is => 'ro', predicate => 1 );
+has [qw/white black/] => (
+    is => 'ro',
+    predicate => 1,
+    coerce => sub {
+        my $players = shift;
+        [ map { Net::KGS::GameArchives::Result::User->new($_) } @$players ];
+    },
+);
 
 has size => ( is => 'ro', required => 1 );
 

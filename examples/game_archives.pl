@@ -7,7 +7,7 @@ use Net::KGS::GameArchives;
 use Time::Piece;
 
 my $cache = Cache::FileCache->new({
-    cache_root         => '/tmp',
+    cache_root         => './cache',
     namespace          => 'Net::KGS::GameArchives',
     default_expires_in => '1M',,
 });
@@ -38,10 +38,9 @@ say " (" . @games . " games)";
 for my $game ( @games ) {
     say "-----";
     say "Viewable?: ", $game->is_viewable ? "Yes (" . $game->kifu_url . ")" : "No";
-    say "Editor: ", $game->editor if $game->has_editor;
-    say "White: ", join ", ", @{ $game->white } if $game->has_white;
-    say "Black: ", join ", ", @{ $game->black } if $game->has_black;
-    #say "Setup: ", $game->setup;
+    say "Editor: ", $game->editor->as_string if $game->has_editor;
+    say "White: ", join ", ", map { $_->as_string } @{ $game->white } if $game->has_white;
+    say "Black: ", join ", ", map { $_->as_string } @{ $game->black } if $game->has_black;
     say "Handicap: ", $game->handicap if $game->has_handicap;
     say "Size: ", $game->size, 'x', $game->size;
     say "Start Time: ", $game->start_time;

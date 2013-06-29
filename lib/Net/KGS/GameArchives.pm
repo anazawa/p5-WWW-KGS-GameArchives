@@ -40,8 +40,9 @@ sub _build__scraper {
         process '//h2', 'summary', 'TEXT';
         process '//table[1]//tr', 'games[]' => scraper {
             process '//a[contains(@href,".sgf")]', 'kifu_url' => '@href';
-            process '//td[2]//a', 'white[]' => 'TEXT';
-            process '//td[3]//a', 'black[]' => 'TEXT';
+            process '//td[2]//a', 'white[]' => { name => 'TEXT', url => '@href' };
+            #process '//td[3]//a', 'black[]' => 'TEXT';
+            process '//td[3]//a', 'black[]' => { name => 'TEXT', url => '@href' };
             process '//td[3]', 'maybe_setup' => 'TEXT';
             process '//td[4]', 'setup' => 'TEXT';
             process '//td[5]', 'start_time' => 'TEXT';
