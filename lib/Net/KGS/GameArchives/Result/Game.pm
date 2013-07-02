@@ -87,19 +87,12 @@ sub is_simul {
     lc $_[0]->type eq 'simul';
 }
 
-sub as_hashref {
+sub setup {
     my $self = shift;
+    my $setup = $self->size . 'x' . $self->size;
+    $setup .= ' H' . $self->handicap if $self->has_handicap;
+    $setup;
 
-    my %game = (
-        result => $self->result,
-        size   => $self->size,
-        type   => $self->type,
-    );
-
-    $game{kifu_url} = $self->kifu_url if $self->is_viewable;
-    $game{handicap} = $self->handicap if $self->has_handicap;
-
-    \%game;
 }
 
 1;

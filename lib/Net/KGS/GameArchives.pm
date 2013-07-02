@@ -1,8 +1,6 @@
 package Net::KGS::GameArchives;
-use Carp;
 use Moo;
 use Net::KGS::GameArchives::Result;
-use Time::Piece;
 use URI;
 use Web::Scraper;
 
@@ -27,19 +25,21 @@ has year => (
     is => 'rw',
     isa => sub { die "Invalid" if $_[0] > gmtime->year },
     coerce => sub { int $_[0] },
+    predicate => '_has_year',
 );
 
 has month => (
     is => 'rw',
     isa => sub { die "Invalid" if !$_[0] or $_[0] > 12 },
     coerce => sub { int $_[0] },
+    predicate => '_has_month',
 );
 
 has tags => ( is => 'rw' );
 
 has old_accounts => ( is => 'rw' );
 
-has _scraper => ( is => 'ro', builder => '_build_scraper', lazy => 1 );
+has scraper => ( is => 'ro', builder => '_build_scraper', lazy => 1 );
 has user_agent => ( is => 'ro', predicate => '_has_user_agent' );
 
 sub _build_scraper {
@@ -70,7 +70,6 @@ sub _build_scraper {
 
 sub as_uri {
     my $self = shift;
-    my $now  = gmtime;
     my $uri  = $self->base_uri->clone;
 
     my @query;
@@ -78,8 +77,8 @@ sub as_uri {
     push @query, 'user', $self->user;
     push @query, 'oldAccounts', 'y' if $self->old_accounts;
     push @query, 'tags', 't' if $self->tags;
-    push @query, $self->year  || $now->year;
-    push @query, $self->month || $now->mon;
+    push @query, 'year', $self->year if $self->_has_year;
+    push @query, 'month', $self->month if $self->_has_month;
 
     $uri->query_form( @query );
 
@@ -89,7 +88,7 @@ sub as_uri {
 sub scrape {
     my $self   = shift;
     my $stuff  = shift || $self->as_uri;
-    my $result = $self->_scraper->scrape( $stuff, @_ );
+    my $result = $self->scraper->scrape( $stuff, @_ );
 
     my $total_hits = 0;
     if ( my $summary = delete $result->{summary} ) {
@@ -99,7 +98,6 @@ sub scrape {
 
     if ( $total_hits == 0 ) {
         $result->{games} = [];
-        $result->{urls}  = [];
     }
 
     my $games = $result->{games};
@@ -138,7 +136,8 @@ sub scrape {
 
 sub parse {
     my $self = shift;
-    Net::KGS::GameArchives::Result->new( $self->scrape );
+    my $result = $self->scrape( @_ );
+    Net::KGS::GameArchives::Result->new( $result );
 }
 
 1;

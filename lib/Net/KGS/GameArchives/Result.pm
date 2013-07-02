@@ -6,6 +6,7 @@ has tagged_by => ( is => 'ro', predicate => 1 );
 
 has games => (
     is => 'ro',
+    predicate => 1,
     coerce => sub {
         my $games = shift;
         [ map { Net::KGS::GameArchives::Result::Game->new($_) } @$games ];
