@@ -1,4 +1,5 @@
 package Net::KGS::GameArchives;
+use Carp qw/croak/;
 use Moo;
 use Net::KGS::GameArchives::Result;
 use URI;
@@ -39,7 +40,7 @@ has tags => ( is => 'rw' );
 
 has old_accounts => ( is => 'rw' );
 
-has scraper => ( is => 'ro', builder => '_build_scraper', lazy => 1 );
+has _scraper => ( is => 'ro', builder => '_build_scraper', lazy => 1 );
 has user_agent => ( is => 'ro', predicate => '_has_user_agent' );
 
 sub _build_scraper {
@@ -88,7 +89,7 @@ sub as_uri {
 sub scrape {
     my $self   = shift;
     my $stuff  = shift || $self->as_uri;
-    my $result = $self->scraper->scrape( $stuff, @_ );
+    my $result = $self->_scraper->scrape( $stuff, @_ );
 
     my $total_hits = 0;
     if ( my $summary = delete $result->{summary} ) {
