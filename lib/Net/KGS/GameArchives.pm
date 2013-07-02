@@ -4,6 +4,7 @@ use Moo;
 use Net::KGS::GameArchives::Result;
 use URI;
 use Web::Scraper;
+use Time::Piece;
 
 our $VERSION = '0.01';
 
