@@ -5,6 +5,8 @@ use Net::KGS::GameArchives::Result;
 use URI;
 use Web::Scraper;
 
+our $VERSION = '0.01';
+
 our $BaseURI = URI->new('http://www.gokgs.com/gameArchives.jsp');
 
 sub base_uri {

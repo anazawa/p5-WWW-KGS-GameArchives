@@ -1,9 +1,9 @@
 use inc::Module::Install;
 
 all_from 'lib/Net/KGS/GameArchives.pm';
-readme_from 'lib/Net/KGS/GameArchives.pm';
+#readme_from 'lib/Net/KGS/GameArchives.pm';
 
-repository 'https://github.com/anazawa/p5-Net-KGS';
+repository 'https://github.com/anazawa/p5-Net-KGS-GameArchives';
 
 requires 'Moo';
 requires 'Web::Scraper';
