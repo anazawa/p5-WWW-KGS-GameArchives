@@ -112,12 +112,12 @@ __END__
 
 =head1 NAME
 
-Net::KGS::GameArchives - Interface to KGS Go Server Game Archives
+WWW::KGS::GameArchives - Interface to KGS Go Server Game Archives
 
 =head1 SYNOPSIS
 
-  use Net::KGS::GameArchives;
-  my $archives = Net::KGS::GameArchives->new;
+  use WWW::KGS::GameArchives;
+  my $archives = WWW::KGS::GameArchives->new;
   my $result = $archives->query( user => 'YourAccount' );
 
 =head1 DESCRIPTION
