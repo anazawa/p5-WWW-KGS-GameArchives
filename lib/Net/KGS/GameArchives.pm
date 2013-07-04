@@ -249,7 +249,7 @@ Can be used to search games played by expired and guest accounts.
 
 =item tags
 
-Can be used to search games which the specified C<user> have tagged.
+Can be used to search games tagged by the specified C<user>.
 
   my $result = $archives->query(
       user => 'foo',
