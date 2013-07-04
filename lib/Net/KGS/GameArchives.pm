@@ -149,6 +149,7 @@ Use at your own risk.
 
 Defaults to C<http://www.gokgs.com/gameArchives.jsp>.
 The value is used to create a request URI by C<query> method.
+The request URI is passed to C<scrape> method.
 
 =item user_agent
 

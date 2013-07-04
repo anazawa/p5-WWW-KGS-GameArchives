@@ -28,7 +28,8 @@ DESCRIPTION
   ATTRIBUTES
     base_uri
         Defaults to "http://www.gokgs.com/gameArchives.jsp". The value is
-        used to create a request URI by "query" method.
+        used to create a request URI by "query" method. The request URI is
+        passed to "scrape" method.
 
     user_agent
         This attribute is used to construct a Web::Scraper object if a value
@@ -117,8 +118,7 @@ DESCRIPTION
               );
 
         tags
-            Can be used to search games which the specified "user" have
-            tagged.
+            Can be used to search games tagged by the specified "user".
 
               my $result = $archives->query(
                   user => 'foo',
