@@ -1,60 +1,45 @@
 package Net::KGS::GameArchives;
+use 5.008_009;
+use strict;
+use warnings;
 use Carp qw/croak/;
-use Moo;
-use Net::KGS::GameArchives::Result;
 use URI;
 use Web::Scraper;
-use Time::Piece;
 
 our $VERSION = '0.01';
 
-our $BaseURI = URI->new('http://www.gokgs.com/gameArchives.jsp');
-
-sub base_uri {
-    $BaseURI;
+sub new {
+    my $class = shift;
+    my %args = @_ == 1 ? %{$_[0]} : @_;
+    bless { %args }, $class;
 }
 
-has user => (
-    is => 'rw',
-    required => 1,
-    isa => sub {
-        my $user = shift;
-        die 'Must be 1 to 10 characters long' if !$user or length $user > 10;
-        die 'Must contain only English letters and digits' if $user =~ /\W/;
-        die 'Must start with a letter' if $user =~ /^[0-9]/;
-    },
-);
+sub base_uri {
+    $_[0]->{base_uri} ||= URI->new('http://www.gokgs.com/gameArchives.jsp');
+}
 
-has year => (
-    is => 'rw',
-    isa => sub { die "Invalid" if $_[0] > gmtime->year },
-    coerce => sub { int $_[0] },
-    predicate => '_has_year',
-);
+sub user_agent {
+    $_[0]->{user_agent};
+}
 
-has month => (
-    is => 'rw',
-    isa => sub { die "Invalid" if !$_[0] or $_[0] > 12 },
-    coerce => sub { int $_[0] },
-    predicate => '_has_month',
-);
+sub _has_user_agent {
+    exists $_[0]->{user_agent};
+}
 
-has tags => ( is => 'rw' );
-
-has old_accounts => ( is => 'rw' );
-
-has _scraper => ( is => 'ro', builder => '_build_scraper', lazy => 1 );
-has user_agent => ( is => 'ro', predicate => '_has_user_agent' );
+sub _scraper {
+    my $self = shift;
+    $self->{scraper} ||= $self->_build_scraper;
+}
 
 sub _build_scraper {
     my $self = shift;
 
     my $scraper = scraper {
         process '//h2[1]', 'summary' => 'TEXT';
-        process '//table[1]//tr', 'games[]' => scraper {
+        process '//table[tr/th/text()="Viewable?"]//following-sibling::tr', 'games[]' => scraper {
             process '//a[contains(@href,".sgf")]', 'kifu_url' => '@href';
-            process '//td[2]//a', 'white[]' => { name => 'TEXT', url => '@href' };
-            process '//td[3]//a', 'black[]' => { name => 'TEXT', url => '@href' };
+            process '//td[2]//a', 'white[]' => { name => 'TEXT', link => '@href' };
+            process '//td[3]//a', 'black[]' => { name => 'TEXT', link => '@href' };
             process '//td[3]', 'maybe_setup' => 'TEXT';
             process '//td[4]', 'setup' => 'TEXT';
             process '//td[5]', 'start_time' => 'TEXT';
@@ -64,7 +49,13 @@ sub _build_scraper {
         };
         process '//a[contains(@href,".zip")]', 'zip_url' => '@href';
         process '//a[contains(@href,".tar.gz")]', 'tgz_url' => '@href';
-        process '//table[2]//a', 'urls[]' => '@href';
+        process '//table[descendant::tr/th/text()="Year"]//following-sibling::tr', 'calendar[]' => scraper {
+            process '//td[1]', 'year' => 'TEXT';
+            process qq{//following-sibling::td[text()!="\x{a0}"]}, 'month[]' => scraper {
+                process '.', 'name' => 'TEXT';
+                process 'a', 'link' => '@href';
+            };
+        };
     };
 
     $scraper->user_agent( $self->user_agent ) if $self->_has_user_agent;
@@ -72,42 +63,12 @@ sub _build_scraper {
     $scraper;
 }
 
-sub as_uri {
-    my $self = shift;
-    my $uri  = $self->base_uri->clone;
-
-    my @query;
-
-    push @query, 'user', $self->user;
-    push @query, 'oldAccounts', 'y' if $self->old_accounts;
-    push @query, 'tags', 't' if $self->tags;
-    push @query, 'year', $self->year if $self->_has_year;
-    push @query, 'month', $self->month if $self->_has_month;
-
-    $uri->query_form( @query );
-
-    $uri;
-}
-
 sub scrape {
     my $self   = shift;
-    my $stuff  = shift || $self->as_uri;
-    my $result = $self->_scraper->scrape( $stuff, @_ );
+    my $result = $self->_scraper->scrape( @_ );
+    my $games  = $result->{games};
 
-    my $total_hits = 0;
-    if ( my $summary = delete $result->{summary} ) {
-        ( $total_hits ) = $summary =~ /\((\d+) games?\)$/;
-        $summary =~ /tagged by (\w+),/ and $result->{tagged_by} = $1;
-    }
-
-    if ( $total_hits == 0 ) {
-        $result->{games} = [];
-    }
-
-    my $games = $result->{games};
-    shift @$games; # remove <table> heads
-
-    croak "Failed to parse $stuff" if @$games != $total_hits;
+    return $result unless $games;
 
     for my $game ( @$games ) {
         my $maybe_setup = delete $game->{maybe_setup};
@@ -138,10 +99,11 @@ sub scrape {
     $result;
 }
 
-sub parse {
-    my $self = shift;
-    my $result = $self->scrape( @_ );
-    Net::KGS::GameArchives::Result->new( $result );
+sub query {
+    my ( $self, @query ) = @_;
+    my $uri = $self->base_uri->clone;
+    $uri->query_form( @query );
+    $self->scrape( $uri );
 }
 
 1;
