@@ -1,4 +1,4 @@
-package Net::KGS::GameArchives;
+package WWW::KGS::GameArchives;
 use 5.008_009;
 use strict;
 use warnings;

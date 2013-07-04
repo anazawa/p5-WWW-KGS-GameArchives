@@ -2,5 +2,5 @@ use strict;
 use Test::More tests => 1;
 
 BEGIN {
-    use_ok 'Net::KGS::GameArchives';
+    use_ok 'WWW::KGS::GameArchives';
 }
