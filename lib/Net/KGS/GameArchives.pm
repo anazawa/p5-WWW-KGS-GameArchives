@@ -37,7 +37,7 @@ sub _build_scraper {
     my $scraper = scraper {
         process 'h2', 'summary' => 'TEXT';
         process '//table[tr/th/text()="Viewable?"]//following-sibling::tr', 'games[]' => scraper {
-            process '//a[contains(@href,".sgf")]', 'kifu_url' => '@href';
+            process '//a[contains(@href,".sgf")]', 'kifu_uri' => '@href';
             process '//td[2]//a', 'white[]' => { name => 'TEXT', link => '@href' };
             process '//td[3]//a', 'black[]' => { name => 'TEXT', link => '@href' };
             process '//td[3]', 'maybe_setup' => 'TEXT';
@@ -47,8 +47,8 @@ sub _build_scraper {
             process '//td[7]', 'result' => 'TEXT';
             process '//td[8]', 'tag' => 'TEXT';
         };
-        process '//a[contains(@href,".zip")]', 'zip_url' => '@href';
-        process '//a[contains(@href,".tar.gz")]', 'tgz_url' => '@href';
+        process '//a[contains(@href,".zip")]', 'zip_uri' => '@href';
+        process '//a[contains(@href,".tar.gz")]', 'tgz_uri' => '@href';
         process '//table[descendant::tr/th/text()="Year"]//following-sibling::tr', 'calendar[]' => scraper {
             process 'td', 'year' => 'TEXT';
             process qq{//following-sibling::td[text()!="\x{a0}"]}, 'month[]' => scraper {
@@ -118,9 +118,28 @@ Net::KGS::GameArchives - Interface to KGS Go Server Game Archives
 
   use Net::KGS::GameArchives;
   my $archives = Net::KGS::GameArchives->new;
-  my $result = $archives->query( user => 'YourAccount' ); # => HashRef
+  my $result = $archives->query( user => 'YourAccount' );
 
 =head1 DESCRIPTION
+
+L<KGS|http://www.gokgs.com/> Game Archives
+preserves Go games played by the users. You can search games by filling
+in the HTML forms. The search result is provided as an HTML document naturally.
+
+This module provides yet another interface to send a query to the archives,
+and also parses the result into a neatly arranged Perl data structure.
+
+=head2 DISCLAIMER
+
+According to KGS's C<robots.txt>, bots are not allowed to crawl 
+the Game Archives:
+
+  User-agent: *
+  Disallow: /gameArchives.jsp
+
+Although this module can be used to implement crawlers,
+the author doesn't intend to violate their policy.
+Use at your own risk.
 
 =head2 ATTRIBUTES
 
@@ -128,7 +147,13 @@ Net::KGS::GameArchives - Interface to KGS Go Server Game Archives
 
 =item base_uri
 
+Defaults to C<http://www.gokgs.com/gameArchives.jsp>.
+The value is used to create a request URI by C<query> method.
+
 =item user_agent
+
+This attribute is used to construct a L<Web::Scraper> object
+if a value is set.
 
 =back
 
@@ -136,9 +161,10 @@ Net::KGS::GameArchives - Interface to KGS Go Server Game Archives
 
 =over 4
 
-=item $result = $archives->scrape( $stuff )
-
 =item $result = $archives->query( user => 'YourAccount', ... )
+
+Given key-value pairs of query parameters, returns a hash reference
+which represnets the result.
 
   my $result = $archives->query(
       user        => 'foo',
@@ -147,11 +173,14 @@ Net::KGS::GameArchives - Interface to KGS Go Server Game Archives
       oldAccounts => 'y',
       tags        => 't',
   );
+
+The hashref is formatted as follows:
+
+  $result;
   # => {
   #     summary => 'Games of KGS player foo, ...',
-  #     games => [
+  #     games => [ # sorted by "start_time" in descending order
   #         {
-  #             kifu_uri => 'http://.../games/2013/7/foo-bar.sgf',
   #             white => [
   #                 {
   #                     name => 'foo [4k]',
@@ -160,19 +189,20 @@ Net::KGS::GameArchives - Interface to KGS Go Server Game Archives
   #             ],
   #             black => [
   #                 {
-  #                     name => 'bar [4k]',
+  #                     name => 'bar [6k]',
   #                     link => 'http://...&user=bar...'
   #                 }
   #             ],
-  #             setup => '19x19',
+  #             setup => '19x19 H2',
   #             start_time => '7/4/13 5:32 AM', # GMT
   #             type => 'Ranked',
   #             result => 'W+Res.'
+  #             kifu_uri => 'http://.../games/2013/7/foo-bar.sgf',
   #         },
   #         ...
   #     ],
-  #     zip_uri => 'http://.../foo-2013-7.zip', # contains SGF files
-  #     tgz_uri => 'http://.../foo-2013-7.tar.gz',
+  #     zip_uri => 'http://.../foo-2013-7.zip',    # contains SGF files
+  #     tgz_uri => 'http://.../foo-2013-7.tar.gz', # created in July 2013
   #     calendar => [
   #         {
   #             year => '2011',
@@ -188,37 +218,57 @@ Net::KGS::GameArchives - Interface to KGS Go Server Game Archives
   #     ]
   # }
 
+The possible parameters are as follows:
+
 =over 4
 
 =item user (required)
 
-=item year
+Represents a KGS username.
 
-=item month
+  my $result = $archives->query( user => 'foo' );
+
+=item year, month
+
+Can be used to search games played in the specified month.
+
+  my $result = $archives->query(
+      user  => 'foo',
+      year  => '2013',
+      month => '7',
+  );
 
 =item oldAccounts
 
+Can be used to search games played by expired and guest accounts.
+
+  my $result = $archives->query(
+      user        => 'foo',
+      oldAccounts => 'y'
+  );
+
 =item tags
 
-=back
+Can be used to search games which the specified C<user> have tagged.
+
+  my $result = $archives->query(
+      user => 'foo',
+      tags => 't'
+  );
 
 =back
 
-=head2 DISCLAIMER
+=item $result = $archives->scrape( $stuff )
 
-According to KGS's C<robots.txt>, bots are not allowed to crawl 
-the Game Archives:
+Receives the same arguments as L<Web::Scraper>'s C<scrape> method.
+C<query> method is just a wrapper of this method. For example,
+you can pass URIs included by the return value of C<query> method.
 
-  User-agent: *
-  Disallow: /gameArchives.jsp
-
-Although this module can be used to implement crawlers,
-the author doesn't intend to violate their policy.
-Use at your own risk.
+=back
 
 =head1 SEE ALSO
 
-L<http://www.gokgs.com/robots.txt>
+L<Web::Scraper>
 
 =head1 AUTHOR
 
