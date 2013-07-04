@@ -3,10 +3,72 @@ NAME
 
 SYNOPSIS
       use Net::KGS::GameArchives;
-      my $archives = Net::KGS::GameArchives->new( user => 'YourAccount' );
-      my $result = $archives->parse; # => Net::KGS::GameAcrhives::Result object
+      my $archives = Net::KGS::GameArchives->new;
+      my $result = $archives->query( user => 'YourAccount' ); # => HashRef
 
-DISCLAIMER
+DESCRIPTION
+  ATTRIBUTES
+    base_uri
+    user_agent
+
+  METHODS
+    $result = $archives->scrape( $stuff )
+    $result = $archives->query( user => 'YourAccount', ... )
+          my $result = $archives->query(
+              user        => 'foo',
+              year        => '2013',
+              month       => '7',
+              oldAccounts => 'y',
+              tags        => 't',
+          );
+          # => {
+          #     summary => 'Games of KGS player foo, ...',
+          #     games => [
+          #         {
+          #             kifu_uri => 'http://.../games/2013/7/foo-bar.sgf',
+          #             white => [
+          #                 {
+          #                     name => 'foo [4k]',
+          #                     link => 'http://...&user=foo...'
+          #                 }
+          #             ],
+          #             black => [
+          #                 {
+          #                     name => 'bar [4k]',
+          #                     link => 'http://...&user=bar...'
+          #                 }
+          #             ],
+          #             setup => '19x19',
+          #             start_time => '7/4/13 5:32 AM', # GMT
+          #             type => 'Ranked',
+          #             result => 'W+Res.'
+          #         },
+          #         ...
+          #     ],
+          #     zip_uri => 'http://.../foo-2013-7.zip', # contains SGF files
+          #     tgz_uri => 'http://.../foo-2013-7.tar.gz',
+          #     calendar => [
+          #         {
+          #             year => '2011',
+          #             month => [
+          #                 {
+          #                     name => 'Jul',
+          #                     link => 'http://...&year=2011&month=7...',
+          #                 },
+          #                 ...
+          #             ]
+          #         },
+          #         ...
+          #     ]
+          # }
+
+        user (required)
+        year
+        month
+        oldAccounts
+        tags
+
+  DISCLAIMER
     According to KGS's "robots.txt", bots are not allowed to crawl the Game
     Archives:
 

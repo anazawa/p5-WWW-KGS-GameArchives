@@ -35,7 +35,7 @@ sub _build_scraper {
     my $self = shift;
 
     my $scraper = scraper {
-        process '//h2[1]', 'summary' => 'TEXT';
+        process 'h2', 'summary' => 'TEXT';
         process '//table[tr/th/text()="Viewable?"]//following-sibling::tr', 'games[]' => scraper {
             process '//a[contains(@href,".sgf")]', 'kifu_url' => '@href';
             process '//td[2]//a', 'white[]' => { name => 'TEXT', link => '@href' };
@@ -50,7 +50,7 @@ sub _build_scraper {
         process '//a[contains(@href,".zip")]', 'zip_url' => '@href';
         process '//a[contains(@href,".tar.gz")]', 'tgz_url' => '@href';
         process '//table[descendant::tr/th/text()="Year"]//following-sibling::tr', 'calendar[]' => scraper {
-            process '//td[1]', 'year' => 'TEXT';
+            process 'td', 'year' => 'TEXT';
             process qq{//following-sibling::td[text()!="\x{a0}"]}, 'month[]' => scraper {
                 process '.', 'name' => 'TEXT';
                 process 'a', 'link' => '@href';
@@ -117,10 +117,94 @@ Net::KGS::GameArchives - Interface to KGS Go Server Game Archives
 =head1 SYNOPSIS
 
   use Net::KGS::GameArchives;
-  my $archives = Net::KGS::GameArchives->new( user => 'YourAccount' );
-  my $result = $archives->parse; # => Net::KGS::GameAcrhives::Result object
+  my $archives = Net::KGS::GameArchives->new;
+  my $result = $archives->query( user => 'YourAccount' ); # => HashRef
 
-=head1 DISCLAIMER
+=head1 DESCRIPTION
+
+=head2 ATTRIBUTES
+
+=over 4
+
+=item base_uri
+
+=item user_agent
+
+=back
+
+=head2 METHODS
+
+=over 4
+
+=item $result = $archives->scrape( $stuff )
+
+=item $result = $archives->query( user => 'YourAccount', ... )
+
+  my $result = $archives->query(
+      user        => 'foo',
+      year        => '2013',
+      month       => '7',
+      oldAccounts => 'y',
+      tags        => 't',
+  );
+  # => {
+  #     summary => 'Games of KGS player foo, ...',
+  #     games => [
+  #         {
+  #             kifu_uri => 'http://.../games/2013/7/foo-bar.sgf',
+  #             white => [
+  #                 {
+  #                     name => 'foo [4k]',
+  #                     link => 'http://...&user=foo...'
+  #                 }
+  #             ],
+  #             black => [
+  #                 {
+  #                     name => 'bar [4k]',
+  #                     link => 'http://...&user=bar...'
+  #                 }
+  #             ],
+  #             setup => '19x19',
+  #             start_time => '7/4/13 5:32 AM', # GMT
+  #             type => 'Ranked',
+  #             result => 'W+Res.'
+  #         },
+  #         ...
+  #     ],
+  #     zip_uri => 'http://.../foo-2013-7.zip', # contains SGF files
+  #     tgz_uri => 'http://.../foo-2013-7.tar.gz',
+  #     calendar => [
+  #         {
+  #             year => '2011',
+  #             month => [
+  #                 {
+  #                     name => 'Jul',
+  #                     link => 'http://...&year=2011&month=7...',
+  #                 },
+  #                 ...
+  #             ]
+  #         },
+  #         ...
+  #     ]
+  # }
+
+=over 4
+
+=item user (required)
+
+=item year
+
+=item month
+
+=item oldAccounts
+
+=item tags
+
+=back
+
+=back
+
+=head2 DISCLAIMER
 
 According to KGS's C<robots.txt>, bots are not allowed to crawl 
 the Game Archives:
