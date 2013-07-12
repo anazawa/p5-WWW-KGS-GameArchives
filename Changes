@@ -2,6 +2,7 @@ Revision history for Perl extension WWW::KGS::GameArchives.
 
 0.02  Jul 13th, 2013
 
+  - #user_agent defaults to Web::Scraper#user_agent
   - #_build_scraper creates callbacks more effectively
 
 0.01  Jul 5th, 2013
