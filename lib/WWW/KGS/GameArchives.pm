@@ -19,11 +19,16 @@ sub base_uri {
 }
 
 sub user_agent {
-    $_[0]->{user_agent};
+    my $self = shift;
+    $self->{user_agent} ||= $self->_build_user_agent;
 }
 
 sub _has_user_agent {
     exists $_[0]->{user_agent};
+}
+
+sub _build_user_agent {
+    $_[0]->_scraper->user_agent;
 }
 
 sub _scraper {
@@ -34,28 +39,34 @@ sub _scraper {
 sub _build_scraper {
     my $self = shift;
 
+    my $game = scraper {
+        process '//a[contains(@href,".sgf")]', 'kifu_uri' => '@href';
+        process '//td[2]//a', 'white[]' => { name => 'TEXT', link => '@href' };
+        process '//td[3]//a', 'black[]' => { name => 'TEXT', link => '@href' };
+        process '//td[3]', 'maybe_setup' => 'TEXT';
+        process '//td[4]', 'setup' => 'TEXT';
+        process '//td[5]', 'start_time' => 'TEXT';
+        process '//td[6]', 'type' => 'TEXT';
+        process '//td[7]', 'result' => 'TEXT';
+        process '//td[8]', 'tag' => 'TEXT';
+    };
+
+    my $calendar = scraper {
+        process 'td', 'year' => 'TEXT';
+        process qq{//following-sibling::td[text()!="\x{a0}"]}, 'month[]' => scraper {
+            process '.', 'name' => 'TEXT';
+            process 'a', 'link' => '@href';
+        };
+    };
+
     my $scraper = scraper {
         process 'h2', 'summary' => 'TEXT';
-        process '//table[tr/th/text()="Viewable?"]//following-sibling::tr', 'games[]' => scraper {
-            process '//a[contains(@href,".sgf")]', 'kifu_uri' => '@href';
-            process '//td[2]//a', 'white[]' => { name => 'TEXT', link => '@href' };
-            process '//td[3]//a', 'black[]' => { name => 'TEXT', link => '@href' };
-            process '//td[3]', 'maybe_setup' => 'TEXT';
-            process '//td[4]', 'setup' => 'TEXT';
-            process '//td[5]', 'start_time' => 'TEXT';
-            process '//td[6]', 'type' => 'TEXT';
-            process '//td[7]', 'result' => 'TEXT';
-            process '//td[8]', 'tag' => 'TEXT';
-        };
+        process '//table[tr/th/text()="Viewable?"]//following-sibling::tr',
+            'games[]' => $game;
         process '//a[contains(@href,".zip")]', 'zip_uri' => '@href';
         process '//a[contains(@href,".tar.gz")]', 'tgz_uri' => '@href';
-        process '//table[descendant::tr/th/text()="Year"]//following-sibling::tr', 'calendar[]' => scraper {
-            process 'td', 'year' => 'TEXT';
-            process qq{//following-sibling::td[text()!="\x{a0}"]}, 'month[]' => scraper {
-                process '.', 'name' => 'TEXT';
-                process 'a', 'link' => '@href';
-            };
-        };
+        process '//table[descendant::tr/th/text()="Year"]//following-sibling::tr',
+            'calendar[]' => $calendar;
     };
 
     $scraper->user_agent( $self->user_agent ) if $self->_has_user_agent;
@@ -261,7 +272,7 @@ Can be used to search games tagged by the specified C<user>.
 
 =item $result = $archives->scrape( $stuff )
 
-Receives the same arguments as L<Web::Scraper>'s C<scrape> method.
+The given arguments are passed to L<Web::Scraper>'s C<scrape> method.
 C<query> method is just a wrapper of this method. For example,
 you can pass URIs included by the return value of C<query> method.
 
