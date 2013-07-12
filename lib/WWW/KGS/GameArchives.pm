@@ -6,7 +6,7 @@ use Carp qw/croak/;
 use URI;
 use Web::Scraper;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 sub new {
     my $class = shift;
@@ -61,12 +61,10 @@ sub _build_scraper {
 
     my $scraper = scraper {
         process 'h2', 'summary' => 'TEXT';
-        process '//table[tr/th/text()="Viewable?"]//following-sibling::tr',
-            'games[]' => $game;
+        process '//table[tr/th/text()="Viewable?"]//following-sibling::tr', 'games[]' => $game;
         process '//a[contains(@href,".zip")]', 'zip_uri' => '@href';
         process '//a[contains(@href,".tar.gz")]', 'tgz_uri' => '@href';
-        process '//table[descendant::tr/th/text()="Year"]//following-sibling::tr',
-            'calendar[]' => $calendar;
+        process '//table[descendant::tr/th/text()="Year"]//following-sibling::tr', 'calendar[]' => $calendar;
     };
 
     $scraper->user_agent( $self->user_agent ) if $self->_has_user_agent;

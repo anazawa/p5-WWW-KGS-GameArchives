@@ -1,5 +1,7 @@
 Revision history for Perl extension WWW::KGS::GameArchives.
 
+0.02  Jul 13th, 2013
+
   - #_build_scraper creates callbacks more effectively
 
 0.01  Jul 5th, 2013

@@ -126,7 +126,7 @@ DESCRIPTION
               );
 
     $result = $archives->scrape( $stuff )
-        Receives the same arguments as Web::Scraper's "scrape" method.
+        The given arguments are passed to Web::Scraper's "scrape" method.
         "query" method is just a wrapper of this method. For example, you
         can pass URIs included by the return value of "query" method.
 
