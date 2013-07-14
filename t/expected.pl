@@ -1,4 +1,5 @@
 {
+  'version' => '0.03',
   'zip_uri' => bless( do{\(my $o = 'http://www.gokgs.com/servlet/archives/en_US/anazawa-2013-7.zip')}, 'URI::http' ),
   'games' => [
     {
@@ -44,15 +45,12 @@
   'tgz_uri' => bless( do{\(my $o = 'http://www.gokgs.com/servlet/archives/en_US/anazawa-2013-7.tar.gz')}, 'URI::http' ),
   'calendar' => [
     {
-      'month' => [
-        {
-          'link' => bless( do{\(my $o = 'http://www.gokgs.com/gameArchives.jsp?user=anazawa&year=2013&month=6')}, 'URI::http' ),
-          'name' => 'Jun'
-        },
-        {
-          'name' => 'Jul'
-        }
-      ],
+      'link' => bless( do{\(my $o = 'http://www.gokgs.com/gameArchives.jsp?user=anazawa&year=2013&month=6')}, 'URI::http' ),
+      'month' => 'Jun',
+      'year' => '2013'
+    },
+    {
+      'month' => 'Jul',
       'year' => '2013'
     }
   ]

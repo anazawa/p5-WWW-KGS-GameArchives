@@ -52,6 +52,7 @@ DESCRIPTION
 
           $result;
           # => {
+          #     version => '0.02',
           #     summary => 'Games of KGS player foo, ...',
           #     games => [ # sorted by "start_time" in descending order
           #         {
@@ -79,14 +80,9 @@ DESCRIPTION
           #     tgz_uri => 'http://.../foo-2013-7.tar.gz', # created in July 2013
           #     calendar => [
           #         {
-          #             year => '2011',
-          #             month => [
-          #                 {
-          #                     name => 'Jul',
-          #                     link => 'http://...&year=2011&month=7...',
-          #                 },
-          #                 ...
-          #             ]
+          #             year  => '2011',
+          #             month => 'Jul',
+          #             link  => 'http://...&year=2011&month=7...',
           #         },
           #         ...
           #     ]

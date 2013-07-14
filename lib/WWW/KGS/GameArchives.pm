@@ -6,7 +6,7 @@ use Carp qw/croak/;
 use URI;
 use Web::Scraper;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 sub new {
     my $class = shift;
@@ -19,16 +19,11 @@ sub base_uri {
 }
 
 sub user_agent {
-    my $self = shift;
-    $self->{user_agent} ||= $self->_build_user_agent;
+    $_[0]->{user_agent};
 }
 
 sub _has_user_agent {
     exists $_[0]->{user_agent};
-}
-
-sub _build_user_agent {
-    $_[0]->_scraper->user_agent;
 }
 
 sub _scraper {
@@ -73,9 +68,26 @@ sub _build_scraper {
 }
 
 sub scrape {
-    my $self   = shift;
-    my $result = $self->_scraper->scrape( @_ );
-    my $games  = $result->{games};
+    my $self     = shift;
+    my $result   = $self->_scraper->scrape( @_ );
+    my $games    = $result->{games};
+    my $calendar = delete $result->{calendar};
+
+    $result->{version} = $self->VERSION;
+
+    return $result unless $calendar;
+
+    my @calendar;
+    for my $c ( @$calendar ) {
+        my $year = $c->{year};
+        for my $month ( @{$c->{month}} ) {
+            $month->{year}  = $year;
+            $month->{month} = delete $month->{name}; # rename
+            push @calendar, $month;
+        }
+    }
+
+    $result->{calendar} = \@calendar;
 
     return $result unless $games;
 
@@ -188,6 +200,7 @@ The hashref is formatted as follows:
 
   $result;
   # => {
+  #     version => '0.02',
   #     summary => 'Games of KGS player foo, ...',
   #     games => [ # sorted by "start_time" in descending order
   #         {
@@ -215,14 +228,9 @@ The hashref is formatted as follows:
   #     tgz_uri => 'http://.../foo-2013-7.tar.gz', # created in July 2013
   #     calendar => [
   #         {
-  #             year => '2011',
-  #             month => [
-  #                 {
-  #                     name => 'Jul',
-  #                     link => 'http://...&year=2011&month=7...',
-  #                 },
-  #                 ...
-  #             ]
+  #             year  => '2011',
+  #             month => 'Jul',
+  #             link  => 'http://...&year=2011&month=7...',
   #         },
   #         ...
   #     ]
