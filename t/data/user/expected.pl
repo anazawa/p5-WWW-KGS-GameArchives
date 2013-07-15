@@ -1,5 +1,4 @@
 {
-  'version' => '0.03',
   'zip_uri' => bless( do{\(my $o = 'http://www.gokgs.com/servlet/archives/en_US/anazawa-2013-7.zip')}, 'URI::http' ),
   'games' => [
     {
