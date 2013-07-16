@@ -3,7 +3,7 @@ use Moo;
 
 has 'summary' => ( is => 'ro', predicate => 1 );
 
-has 'game' => (
+has 'games' => (
     is => 'ro',
     predicate => 1,
     coerce => sub {

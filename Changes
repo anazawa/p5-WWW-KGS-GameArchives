@@ -1,5 +1,10 @@
 Revision history for Perl extension WWW::KGS::GameArchives.
 
+0.05  Jul 17th, 2013
+
+  - add examples/
+  - tests require Path::Class
+
 0.04  Jul 15th, 2013
 
   - fix KGS's calendar bug

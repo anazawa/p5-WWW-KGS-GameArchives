@@ -5,7 +5,7 @@ use warnings;
 use URI;
 use Web::Scraper;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 sub new {
     my $class = shift;
