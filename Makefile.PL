@@ -8,6 +8,8 @@ repository 'https://github.com/anazawa/p5-WWW-KGS-GameArchives';
 requires 'Web::Scraper';
 requires 'URI';
 
+no_index directory => 'examples';
+
 test_requires 'Test::More' => '0.98';
 test_requires 'Path::Class' => '0.22';
 

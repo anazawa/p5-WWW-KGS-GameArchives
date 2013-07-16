@@ -2,7 +2,6 @@ package WWW::KGS::GameArchives;
 use 5.008_009;
 use strict;
 use warnings;
-use Carp qw/croak/;
 use URI;
 use Web::Scraper;
 
@@ -203,7 +202,6 @@ The hashref is formatted as follows:
 
   $result;
   # => {
-  #     version => '0.02',
   #     summary => 'Games of KGS player foo, ...',
   #     games => [ # sorted by "start_time" in descending order
   #         {
@@ -287,25 +285,11 @@ you can pass URIs included by the return value of C<query> method.
 
 =back
 
-=head1 WHAT'S NOT SUPPORTED
+=head1 FILTERING VALUES
 
-This module doesn't modify the values of C<$result>.
-You can define your result class as follows:
-
-  package WWW::KGS::GameArchives::Result;
-  use Moo;
-  use WWW::KGS::GameArchives::Result::Game;
-
-  has 'games' => (
-      is => 'ro',
-      predicate => 1,
-      coerce => sub {
-          my $games = shift;
-          [ map { KGS::GameArchives::Result::Game->new($_) } @$games ];
-      }
-  );
-
-  ...
+This module doesn't modify the values of C<$result> at all.
+Use L<Moo>'s or L<Mouse>'s C<coerce> to filter values.
+See C<examples/>.
 
 =head1 SEE ALSO
 

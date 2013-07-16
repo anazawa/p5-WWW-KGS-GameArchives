@@ -52,7 +52,6 @@ DESCRIPTION
 
           $result;
           # => {
-          #     version => '0.02',
           #     summary => 'Games of KGS player foo, ...',
           #     games => [ # sorted by "start_time" in descending order
           #         {
@@ -126,24 +125,9 @@ DESCRIPTION
         "query" method is just a wrapper of this method. For example, you
         can pass URIs included by the return value of "query" method.
 
-WHAT'S NOT SUPPORTED
-    This module doesn't modify the values of $result. You can define your
-    result class as follows:
-
-      package WWW::KGS::GameArchives::Result;
-      use Moo;
-      use WWW::KGS::GameArchives::Result::Game;
-
-      has 'games' => (
-          is => 'ro',
-          predicate => 1,
-          coerce => sub {
-              my $games = shift;
-              [ map { KGS::GameArchives::Result::Game->new($_) } @$games ];
-          }
-      );
-
-      ...
+FILTERING VALUES
+    This module doesn't modify the values of $result at all. Use Moo's or
+    Mouse's "coerce" to filter values. See "examples/".
 
 SEE ALSO
     Web::Scraper
