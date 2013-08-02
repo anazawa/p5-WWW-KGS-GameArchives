@@ -10,7 +10,7 @@ our $VERSION = '0.05';
 sub new {
     my $class = shift;
     my %args = @_ == 1 ? %{$_[0]} : @_;
-    bless { %args }, $class;
+    bless \%args, $class;
 }
 
 sub base_uri {
@@ -21,7 +21,7 @@ sub user_agent {
     $_[0]->{user_agent};
 }
 
-sub _has_user_agent {
+sub has_user_agent {
     exists $_[0]->{user_agent};
 }
 
@@ -33,35 +33,31 @@ sub _scraper {
 sub _build_scraper {
     my $self = shift;
 
-    my $game = scraper {
-        process '//a[contains(@href,".sgf")]', 'kifu_uri' => '@href';
-        process '//td[2]//a', 'white[]' => { name => 'TEXT', link => '@href' };
-        process '//td[3]//a', 'black[]' => { name => 'TEXT', link => '@href' };
-        process '//td[3]', 'maybe_setup' => 'TEXT';
-        process '//td[4]', 'setup' => 'TEXT';
-        process '//td[5]', 'start_time' => 'TEXT';
-        process '//td[6]', 'type' => 'TEXT';
-        process '//td[7]', 'result' => 'TEXT';
-        process '//td[8]', 'tag' => 'TEXT';
-    };
-
-    my $calendar = scraper {
-        process 'td', 'year' => 'TEXT';
-        process qq{//following-sibling::td[text()!="\x{a0}"]}, 'month[]' => scraper {
-            process '.', 'name' => 'TEXT';
-            process 'a', 'link' => '@href';
+    my $scraper = scraper {
+        process 'h2', 'summary' => 'TEXT';
+        process '//table[tr/th/text()="Viewable?"]//following-sibling::tr', 'games[]' => scraper {
+            process '//a[contains(@href,".sgf")]', 'kifu_uri' => '@href';
+            process '//td[2]//a', 'white[]' => { name => 'TEXT', link => '@href' };
+            process '//td[3]//a', 'black[]' => { name => 'TEXT', link => '@href' };
+            process '//td[3]', 'maybe_setup' => 'TEXT';
+            process '//td[4]', 'setup' => 'TEXT';
+            process '//td[5]', 'start_time' => 'TEXT';
+            process '//td[6]', 'type' => 'TEXT';
+            process '//td[7]', 'result' => 'TEXT';
+            process '//td[8]', 'tag' => 'TEXT';
+        };
+        process '//a[contains(@href,".zip")]', 'zip_uri' => '@href';
+        process '//a[contains(@href,".tar.gz")]', 'tgz_uri' => '@href';
+        process '//table[descendant::tr/th/text()="Year"]//following-sibling::tr', 'calendar[]' => scraper {
+            process 'td', 'year' => 'TEXT';
+            process qq{//following-sibling::td[text()!="\x{a0}"]}, 'month[]' => scraper {
+                process '.', 'name' => 'TEXT';
+                process 'a', 'link' => '@href';
+            };
         };
     };
 
-    my $scraper = scraper {
-        process 'h2', 'summary' => 'TEXT';
-        process '//table[tr/th/text()="Viewable?"]//following-sibling::tr', 'games[]' => $game;
-        process '//a[contains(@href,".zip")]', 'zip_uri' => '@href';
-        process '//a[contains(@href,".tar.gz")]', 'tgz_uri' => '@href';
-        process '//table[descendant::tr/th/text()="Year"]//following-sibling::tr', 'calendar[]' => $calendar;
-    };
-
-    $scraper->user_agent( $self->user_agent ) if $self->_has_user_agent;
+    $scraper->user_agent( $self->user_agent ) if $self->has_user_agent;
 
     $scraper;
 }
@@ -76,9 +72,8 @@ sub scrape {
 
     my @calendar;
     for my $c ( @$calendar ) {
-        my $year = $c->{year};
         for my $month ( @{$c->{month}} ) {
-            $month->{year}  = $year;
+            $month->{year}  = $c->{year};
             $month->{month} = delete $month->{name}; # rename
             push @calendar, $month;
         }

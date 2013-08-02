@@ -10,9 +10,8 @@ isa_ok $archives, 'WWW::KGS::GameArchives';
 can_ok $archives, qw(
     base_uri
     user_agent
-    _has_user_agent
+    has_user_agent
     _scraper
-    _build_scraper
     scrape
     query
 );
