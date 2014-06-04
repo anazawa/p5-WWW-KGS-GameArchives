@@ -1,10 +1,19 @@
 NAME
     WWW::KGS::GameArchives - Interface to KGS Go Server Game Archives
+    (DEPRECATED)
 
 SYNOPSIS
       use WWW::KGS::GameArchives;
       my $archives = WWW::KGS::GameArchives->new;
       my $result = $archives->query( user => 'YourAccount' );
+
+DEPRECATION
+    This module was added to the WWW::GoKGS distribution, and also renamed
+    to WWW::GoKGS::Scraper::GameArchives. See "HISTORY" in
+    WWW::GoKGS::Scraper::GameArchives for details.
+
+    This module will not be maintained anymore. Thanks for using
+    "WWW::KGS::GameArchives".
 
 DESCRIPTION
     KGS <http://www.gokgs.com/> Game Archives preserves Go games played by

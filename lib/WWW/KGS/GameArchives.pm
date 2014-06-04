@@ -130,13 +130,22 @@ __END__
 
 =head1 NAME
 
-WWW::KGS::GameArchives - Interface to KGS Go Server Game Archives
+WWW::KGS::GameArchives - Interface to KGS Go Server Game Archives (DEPRECATED)
 
 =head1 SYNOPSIS
 
   use WWW::KGS::GameArchives;
   my $archives = WWW::KGS::GameArchives->new;
   my $result = $archives->query( user => 'YourAccount' );
+
+=head1 DEPRECATION
+
+This module was added to the L<WWW::GoKGS> distribution,
+and also renamed to L<WWW::GoKGS::Scraper::GameArchives>.
+See L<WWW::GoKGS::Scraper::GameArchives/"HISTORY"> for details.
+
+This module will not be maintained anymore.
+Thanks for using C<WWW::KGS::GameArchives>.
 
 =head1 DESCRIPTION
 

@@ -1,5 +1,12 @@
 Revision history for Perl extension WWW::KGS::GameArchives.
 
+  This module was added to the WWW::GoKGS distribution,
+  and also renamed to WWW::GoKGS::Scraper::GameArchives.
+  See "HISTORY" in WWW::GoKGS::Scraper::GameArchives for details.
+
+  This module will not be maintained anymore.
+  Thanks for using C<WWW::KGS::GameArchives>.
+
 0.05  Jul 17th, 2013
 
   - add examples/
